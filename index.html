@@ -109,7 +109,7 @@
   </style>
 </head>
 <body class="min-h-screen text-slate-900">
-  <div id="top" class="max-w-6xl mx-auto px-5 py-6 md:py-10">
+  <div id="top" class="max-w-7xl mx-auto px-5 py-6 md:py-10">
     <main id="app">
       <section class="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-6">
         <aside class="glass rounded-3xl p-6 shadow-xl shadow-slate-200/60">
@@ -291,7 +291,7 @@
       document.title = pageTitle;
 
       app.innerHTML = `
-        <section class="grid grid-cols-1 gap-6 items-start lg:grid-cols-[300px_minmax(0,1fr)_220px]">
+        <section class="grid grid-cols-1 gap-5 items-start lg:grid-cols-[280px_minmax(0,1fr)_190px] xl:grid-cols-[300px_minmax(0,1fr)_200px]">
           <aside class="glass rounded-3xl p-6 shadow-xl shadow-slate-200/60 md:sticky md:top-6">
             <div class="relative">
               <img
@@ -340,7 +340,7 @@
             </div>
           </aside>
 
-          <section class="glass rounded-3xl p-6 md:p-9 shadow-xl shadow-slate-200/60">
+          <section class="glass rounded-3xl p-6 md:p-8 shadow-xl shadow-slate-200/60">
             <article class="markdown-body">
               ${htmlContent}
             </article>
