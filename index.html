@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Academic Homepage from GitHub Issue</title>
+
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Marked: Markdown parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- YAML parser -->
+  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4/dist/js-yaml.min.js"></script>
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+  <style>
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #e0f2fe 0, transparent 35%),
+                  radial-gradient(circle at top right, #fce7f3 0, transparent 35%),
+                  #f8fafc;
+    }
+
+    .markdown-body h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-top: 1.5rem;
+      margin-bottom: 1rem;
+      color: #0f172a;
+      scroll-margin-top: 5rem;
+    }
+
+    .markdown-body h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-top: 2rem;
+      margin-bottom: 0.8rem;
+      color: #1e293b;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 0.4rem;
+      scroll-margin-top: 5rem;
+    }
+
+    .markdown-body p {
+      color: #334155;
+      line-height: 1.8;
+      margin-bottom: 1rem;
+    }
+
+    .markdown-body ul {
+      list-style: none;
+      padding-left: 0;
+      margin: 0.8rem 0 1.2rem;
+    }
+
+    .markdown-body li {
+      position: relative;
+      padding-left: 1.5rem;
+      margin-bottom: 0.55rem;
+      color: #334155;
+      line-height: 1.7;
+    }
+
+    .markdown-body li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.75rem;
+      width: 0.45rem;
+      height: 0.45rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #2563eb, #9333ea);
+    }
+
+    .markdown-body a {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .markdown-body a:hover {
+      text-decoration: underline;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(226, 232, 240, 0.85);
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 37%, #e2e8f0 63%);
+      background-size: 400% 100%;
+      animation: shimmer 1.4s ease infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 100% 0; }
+      100% { background-position: -100% 0; }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-900">
+  <div id="top" class="max-w-6xl mx-auto px-5 py-6 md:py-10">
+    <main id="app">
+      <section class="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-6">
+        <aside class="glass rounded-3xl p-6 shadow-xl shadow-slate-200/60">
+          <div class="w-28 h-28 rounded-3xl skeleton mb-5"></div>
+          <div class="h-7 w-48 rounded skeleton mb-3"></div>
+          <div class="h-4 w-56 rounded skeleton mb-2"></div>
+          <div class="h-4 w-44 rounded skeleton"></div>
+        </aside>
+        <section class="glass rounded-3xl p-6 md:p-8 shadow-xl shadow-slate-200/60">
+          <div class="h-10 w-3/4 rounded skeleton mb-5"></div>
+          <div class="h-4 w-full rounded skeleton mb-3"></div>
+          <div class="h-4 w-11/12 rounded skeleton mb-3"></div>
+          <div class="h-4 w-10/12 rounded skeleton"></div>
+        </section>
+      </section>
+    </main>
+
+    <footer class="mt-8 border-t border-slate-200/80 pt-5 text-sm text-slate-500">
+      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <p>Powered by GitHub Issues.</p>
+        <details class="w-full md:w-auto">
+          <summary class="cursor-pointer font-bold text-slate-600">Source settings</summary>
+          <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+            <input id="repoInput" class="w-full md:w-72 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" value="zhfanrui-test/academic-home" aria-label="GitHub repository" />
+            <button id="loadBtn" class="rounded-xl bg-slate-950 text-white px-4 py-2 text-sm font-semibold hover:bg-slate-800 active:scale-[0.98] transition">
+              Load
+            </button>
+          </div>
+        </details>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const CONFIG = {
+      defaultRepo: "zhfanrui-test/academic-home",
+      label: "page-home",
+      // 如果你想固定 issue number，例如 53，可以填 53；否则会自动寻找 page-home 标签的最新 issue
+      issueNumber: null
+    };
+
+    const app = document.getElementById("app");
+    const repoInput = document.getElementById("repoInput");
+    const loadBtn = document.getElementById("loadBtn");
+
+    marked.setOptions({
+      breaks: true,
+      gfm: true
+    });
+
+    function escapeHtml(value = "") {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function normalizeUrl(url) {
+      if (!url) return "";
+      if (/^https?:\/\//i.test(url)) return url;
+      return `https://${url}`;
+    }
+
+    function slugify(text) {
+      return String(text)
+        .trim()
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, "-")
+        .replace(/^-+|-+$/g, "") || "section";
+    }
+
+    function updatePageNav() {
+      const pageNav = document.getElementById("pageNav");
+      if (!pageNav) return;
+
+      const headings = Array.from(app.querySelectorAll(".markdown-body h1, .markdown-body h2"));
+      const usedIds = new Set();
+
+      pageNav.innerHTML = headings.map(heading => {
+        const text = heading.textContent.trim();
+        let id = heading.id || slugify(text);
+        let index = 2;
+
+        while (usedIds.has(id)) {
+          id = `${slugify(text)}-${index}`;
+          index += 1;
+        }
+
+        usedIds.add(id);
+        heading.id = id;
+
+        return `
+          <a href="#${escapeHtml(id)}" class="rounded-full px-3 py-1.5 hover:bg-white/80 hover:text-blue-700 transition">
+            ${escapeHtml(text)}
+          </a>
+        `;
+      }).join("");
+    }
+
+    function splitIssueBody(body) {
+      const match = body.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
+      if (!match) {
+        return { meta: {}, markdown: body || "" };
+      }
+
+      let meta = {};
+      try {
+        meta = jsyaml.load(match[1]) || {};
+      } catch (err) {
+        console.warn("Failed to parse YAML front matter:", err);
+      }
+
+      return {
+        meta,
+        markdown: match[2] || ""
+      };
+    }
+
+    function getSocialLinks(meta) {
+      const links = [];
+
+      if (meta.email) {
+        links.push({
+          label: "Email",
+          icon: "fa-solid fa-envelope",
+          url: `mailto:${meta.email}`
+        });
+      }
+
+      if (meta.googlescholar) {
+        links.push({
+          label: "Google Scholar",
+          icon: "fa-solid fa-graduation-cap",
+          url: normalizeUrl(meta.googlescholar)
+        });
+      }
+
+      if (meta.orcid) {
+        links.push({
+          label: "ORCID",
+          icon: "fa-brands fa-orcid",
+          url: normalizeUrl(meta.orcid)
+        });
+      }
+
+      if (meta.github) {
+        const githubUrl = String(meta.github).startsWith("http")
+          ? meta.github
+          : `https://github.com/${meta.github}`;
+        links.push({
+          label: "GitHub",
+          icon: "fa-brands fa-github",
+          url: githubUrl
+        });
+      }
+
+      if (meta.linkedin) {
+        links.push({
+          label: "LinkedIn",
+          icon: "fa-brands fa-linkedin",
+          url: normalizeUrl(meta.linkedin)
+        });
+      }
+
+      return links;
+    }
+
+    function renderHomepage(issue, meta, markdown) {
+      const avatar = meta.avatar || "https://academicpages.github.io/images/profile.png";
+      const name = meta.name || issue.user?.login || "Researcher";
+      const pageTitle = `${meta.title || name} | Personal Homepage`;
+      const positionLine = [meta.position, meta.institution].filter(Boolean).join(" · ");
+      const socialLinks = getSocialLinks(meta);
+      const htmlContent = marked.parse(markdown || "");
+      const issueUrl = issue.html_url || "#";
+      const updatedAt = issue.updated_at ? new Date(issue.updated_at).toLocaleString() : "";
+      document.title = pageTitle;
+
+      app.innerHTML = `
+        <section class="grid grid-cols-1 gap-6 items-start lg:grid-cols-[300px_minmax(0,1fr)_220px]">
+          <aside class="glass rounded-3xl p-6 shadow-xl shadow-slate-200/60 md:sticky md:top-6">
+            <div class="relative">
+              <img
+                src="${escapeHtml(avatar)}"
+                alt="${escapeHtml(name)}"
+                class="w-32 h-32 rounded-3xl object-cover shadow-lg ring-4 ring-white"
+                onerror="this.src='https://academicpages.github.io/images/profile.png'"
+              />
+              <div class="absolute -bottom-2 left-24 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 text-white px-3 py-1 text-xs font-bold shadow-lg">
+                Profile
+              </div>
+            </div>
+
+            <h2 class="mt-6 text-2xl font-black text-slate-950">${escapeHtml(name)}</h2>
+
+            ${meta.bio ? `<p class="mt-3 text-sm leading-6 text-slate-600">${escapeHtml(meta.bio)}</p>` : ""}
+
+            <div class="mt-5 space-y-3 text-sm text-slate-700">
+              ${positionLine ? `
+                <div class="grid grid-cols-[1.25rem_1fr] gap-3 items-start">
+                  <i class="fa-solid fa-briefcase mt-1 text-center text-blue-600"></i>
+                  <span>${escapeHtml(positionLine)}</span>
+                </div>` : ""}
+
+              ${meta.location ? `
+                <div class="grid grid-cols-[1.25rem_1fr] gap-3 items-start">
+                  <i class="fa-solid fa-location-dot mt-1 text-center text-blue-600"></i>
+                  <span>${escapeHtml(meta.location)}</span>
+                </div>` : ""}
+            </div>
+
+            ${socialLinks.length ? `
+              <div class="mt-6 grid grid-cols-1 gap-2">
+                ${socialLinks.map(link => `
+                  <a href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer"
+                     class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-sm font-semibold text-slate-700 hover:border-blue-300 hover:text-blue-700 hover:shadow-md transition">
+                    <i class="${escapeHtml(link.icon)} w-5"></i>
+                    ${escapeHtml(link.label)}
+                  </a>
+                `).join("")}
+              </div>` : ""}
+
+            <div class="mt-6 pt-5 border-t border-slate-200 text-xs text-slate-500 space-y-1">
+              <div>Source: <a href="${escapeHtml(issueUrl)}" target="_blank" rel="noopener noreferrer" class="font-semibold text-blue-600 hover:underline">GitHub Issue #${issue.number}</a></div>
+              ${updatedAt ? `<div>Updated: ${escapeHtml(updatedAt)}</div>` : ""}
+            </div>
+          </aside>
+
+          <section class="glass rounded-3xl p-6 md:p-9 shadow-xl shadow-slate-200/60">
+            <article class="markdown-body">
+              ${htmlContent}
+            </article>
+          </section>
+
+          <aside class="glass rounded-3xl p-5 shadow-xl shadow-slate-200/60 lg:sticky lg:top-6">
+            <div>
+              <p class="mb-2 text-xs font-black uppercase tracking-wide text-slate-400">Contents</p>
+              <nav id="pageNav" class="flex flex-col gap-1 text-sm font-bold text-slate-600" aria-label="Page navigation"></nav>
+            </div>
+
+            <a href="#top" class="mt-4 flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-bold text-slate-600 hover:bg-white/80 hover:text-blue-700 transition">
+              <i class="fa-solid fa-arrow-up text-xs"></i>
+              Back to top
+            </a>
+          </aside>
+        </section>
+      `;
+      updatePageNav();
+    }
+
+    function renderError(message, detail = "") {
+      document.title = "Failed to load homepage";
+      const pageNav = document.getElementById("pageNav");
+      if (pageNav) pageNav.innerHTML = "";
+      app.innerHTML = `
+        <div class="glass rounded-3xl p-8 shadow-xl shadow-slate-200/60">
+          <div class="w-14 h-14 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center text-2xl mb-5">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <h2 class="text-2xl font-black text-slate-950 mb-2">Failed to load homepage</h2>
+          <p class="text-slate-600">${escapeHtml(message)}</p>
+          ${detail ? `<pre class="mt-5 overflow-auto rounded-2xl bg-slate-950 text-slate-100 text-xs p-4">${escapeHtml(detail)}</pre>` : ""}
+        </div>
+      `;
+    }
+
+    function renderLoading() {
+      document.title = "Loading homepage...";
+      const pageNav = document.getElementById("pageNav");
+      if (pageNav) pageNav.innerHTML = "";
+      app.innerHTML = `
+        <section class="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-6">
+          <aside class="glass rounded-3xl p-6 shadow-xl shadow-slate-200/60">
+            <div class="w-28 h-28 rounded-3xl skeleton mb-5"></div>
+            <div class="h-7 w-48 rounded skeleton mb-3"></div>
+            <div class="h-4 w-56 rounded skeleton mb-2"></div>
+            <div class="h-4 w-44 rounded skeleton"></div>
+          </aside>
+          <section class="glass rounded-3xl p-6 md:p-8 shadow-xl shadow-slate-200/60">
+            <div class="h-10 w-3/4 rounded skeleton mb-5"></div>
+            <div class="h-4 w-full rounded skeleton mb-3"></div>
+            <div class="h-4 w-11/12 rounded skeleton mb-3"></div>
+            <div class="h-4 w-10/12 rounded skeleton"></div>
+          </section>
+        </section>
+      `;
+    }
+
+    async function fetchIssue(repo) {
+      const cleanRepo = repo.trim().replace(/^https:\/\/github\.com\//, "").replace(/\/$/, "");
+
+      if (!/^[\w.-]+\/[\w.-]+$/.test(cleanRepo)) {
+        throw new Error("Repository format should be owner/repo, for example: zhfanrui-test/academic-home");
+      }
+
+      let apiUrl;
+
+      if (CONFIG.issueNumber) {
+        apiUrl = `https://api.github.com/repos/${cleanRepo}/issues/${CONFIG.issueNumber}`;
+      } else {
+        const params = new URLSearchParams({
+          labels: CONFIG.label,
+          state: "open",
+          per_page: "1",
+          sort: "updated",
+          direction: "desc"
+        });
+        apiUrl = `https://api.github.com/repos/${cleanRepo}/issues?${params.toString()}`;
+      }
+
+      const response = await fetch(apiUrl, {
+        headers: {
+          Accept: "application/vnd.github+json"
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`GitHub API returned ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const issue = Array.isArray(data) ? data[0] : data;
+
+      if (!issue) {
+        throw new Error(`No open issue found with label "${CONFIG.label}".`);
+      }
+
+      return issue;
+    }
+
+    async function loadHomepage() {
+      const repo = repoInput.value || CONFIG.defaultRepo;
+      renderLoading();
+
+      try {
+        const issue = await fetchIssue(repo);
+        const { meta, markdown } = splitIssueBody(issue.body || "");
+        renderHomepage(issue, meta, markdown);
+      } catch (err) {
+        console.error(err);
+        renderError(err.message || "Unknown error", String(err.stack || err));
+      }
+    }
+
+    loadBtn.addEventListener("click", loadHomepage);
+    repoInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") loadHomepage();
+    });
+
+    loadHomepage();
+  </script>
+</body>
+</html>
